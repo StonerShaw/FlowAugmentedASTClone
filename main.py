@@ -16,6 +16,8 @@ from create_clone import createast, creategmndata, createseparategraph, get_data
 import models
 from torch_geometric.data import Data, DataLoader
 
+import matplotlib.pyplot as plt
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--cuda", default=True)
@@ -31,7 +33,7 @@ parser.add_argument("--nextuse", default=False)
 parser.add_argument("--data_setting", default="0")
 parser.add_argument("--batch_size", default=32)
 parser.add_argument("--num_layers", default=4)
-parser.add_argument("--num_epochs", default=10)
+parser.add_argument("--num_epochs", type=int, default=10)
 parser.add_argument("--lr", default=1e-3)
 parser.add_argument("--weight_decay", default=1e-3)
 parser.add_argument("--threshold", default=0)
@@ -184,6 +186,7 @@ if resume_train:
     start_epoch = load_checkpoint(model, optimizer, checkpoint_path)
 
 epochs = trange(start_epoch, args.num_epochs, leave=True, desc="Epoch")
+losses = []
 for epoch in epochs:  # without batching
     batches = create_batches(traindata)
     totalloss = 0.0
@@ -226,6 +229,7 @@ for epoch in epochs:  # without batching
         loss = totalloss / main_index
         batch_acc.append(1.0 * correct / total)
         train_acc.append(batch_acc)
+        losses.append(loss)
         epochs.set_description("Epoch %d (Loss=%g)" % (epoch+1, round(loss, 5)))
 
     if not os.path.exists(f"{dataset}_{args.data_setting}_res"):
@@ -245,3 +249,11 @@ for epoch in epochs:  # without batching
         f.write(" ".join([str(epoch + 1), str(res), "\n"]))
 
     save_checkpoint(model, optimizer, epoch, filename=f"{dataset}_GMN_{args.data_setting}_{str(epoch + 1)}.pth")
+    
+plt.figure(figsize=(10, 5))
+plt.plot(losses)
+plt.xlabel('Batch')
+plt.ylabel('Loss')
+plt.title('Training Loss')
+plt.savefig('training_loss.png')
+plt.show()
