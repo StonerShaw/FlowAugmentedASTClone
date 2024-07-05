@@ -178,14 +178,17 @@ class GMNlayer(MessagePassing):
         m2 = self.propagate(
             edge_index2, size=(x2.size(0), x2.size(0)), x=x2, edge_weight=edge_weight2
         )
-        # print('m',m1.size(),m2.size())
-        scores = torch.mm(x1, x2.t())
-        attn_1 = F.softmax(scores, dim=1)
-        # print(attn_1.size())
+        
+        
+        scores = torch.mm(x1, x2.t()) # 计算相似度/注意力分数
+        attn_1 = F.softmax(scores, dim=1) # 归一化
         attn_2 = F.softmax(scores, dim=0).t()
-        # print(attn_2.size())
-        attnsum_1 = torch.mm(attn_1, x2)
+        attnsum_1 = torch.mm(attn_1, x2) # 注意力加权
         attnsum_2 = torch.mm(attn_2, x1)
+        u1 = x1 - attnsum_1
+        u2 = x2 - attnsum_2
+        
+        
         """if mode!='train':
             print(attn_1)
             torch.save(attn_1,'attns/'+mode+'_attn1')
@@ -196,8 +199,7 @@ class GMNlayer(MessagePassing):
         # print(attnsum_1.size())
         # print(attnsum_2.size())
         
-        u1 = x1 - attnsum_1
-        u2 = x2 - attnsum_2
+
         # print(x1.shape, x2.shape, attn_1.shape, attn_2.shape, flush=True)
         # n1, n2 = attn_1.shape
  
